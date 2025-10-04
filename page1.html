@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduLink Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f') no-repeat center center/cover;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    /* Overlay */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 0;
+    }
+
+    h1 {
+      color: #fff;
+      text-align: center;
+      margin-top: 30px;
+      position: relative;
+      z-index: 1;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 15px;
+      padding: 30px;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0px 8px 25px rgba(0,0,0,0.4);
+      position: relative;
+      z-index: 1;
+      color: #fff;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ffd700;
+    }
+
+    select, input, button {
+      padding: 12px;
+      margin: 10px 5px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
+
+    select, input {
+      width: 40%;
+      border: 1px solid #ccc;
+    }
+
+    input[type="file"], input[type="text"] {
+      background: #fff;
+    }
+
+    button {
+      background: linear-gradient(90deg, #ff512f, #dd2476);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(90deg, #dd2476, #ff512f);
+    }
+
+    .resource-list {
+      margin-top: 20px;
+    }
+
+    .resource-category {
+      margin: 15px 0;
+    }
+
+    .resource-item {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.2);
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin: 8px 0;
+      align-items: center;
+    }
+
+    .resource-item span {
+      font-weight: bold;
+    }
+
+    .resource-item a {
+      background: #ffd700;
+      color: black;
+      padding: 6px 12px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 13px;
+      transition: 0.3s;
+    }
+
+    .resource-item a:hover {
+      background: #ffa500;
+      color: #fff;
+    }
+
+    /* Profile Section */
+    .profile {
+  position: absolute;   /* Stick it in the corner */
+  top: 20px;
+  left: 20px;
+  width: 220px;         /* Small card width */
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+  border-radius: 15px;
+  text-align: center;   /* Center content */
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.profile-pic {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;   /* Makes it circular */
+  object-fit: cover;    /* Crop image nicely */
+  margin-bottom: 10px;
+  border: 3px solid white;
+}
+      
+
+    .profile p {
+      margin: 2px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📚 Welcome to EduLink Dashboard</h1>
+
+  <!-- Profile Section -->
+  <div class="container profile">
+    <h2>Your Profile</h2>
+    <p><strong>Name:</strong> <span id="profileName"></span></p>
+    <p><strong>Year:</strong> <span id="profileYear"></span></p>
+    <p><strong>Department:</strong> <span id="profileDepartment"></span></p>
+    <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+  </div>
+
+  <!-- Upload Resource Section -->
+  <div class="container">
+    <h2>Upload Resource</h2>
+    <select id="uploadCategory">
+      <option value="" disabled selected>Select Category</option>
+      <option value="Books">📖 Books</option>
+      <option value="PYQs">📝 PYQs</option>
+      <option value="Links">🔗 Links</option>
+      <option value="Notes">📒 Notes</option>
+    </select>
+    <input type="file" id="fileInput">
+    <input type="text" id="linkInput" placeholder="Or paste a link">
+    <button onclick="uploadResource()">Upload</button>
+  </div>
+
+  <!-- Get Resources Section -->
+  <div class="container">
+    <h2>Get Resources</h2>
+    <div id="resourceList" class="resource-list">
+      <p>No resources uploaded yet.</p>
+    </div>
+  </div>
+
+  <script>
+    // Show profile from localStorage
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      document.getElementById("profileName").innerText = storedUser.name;
+      document.getElementById("profileYear").innerText = storedUser.year;
+      document.getElementById("profileDepartment").innerText = storedUser.department;
+      document.getElementById("profileEmail").innerText = storedUser.email;
+    }
+
+    // Resources logic
+    let resources = {
+      Books: [],
+      PYQs: [],
+      Links: [],
+      Notes: []
+    };
+
+    function uploadResource() {
+      const category = document.getElementById("uploadCategory").value;
+      const fileInput = document.getElementById("fileInput");
+      const linkInput = document.getElementById("linkInput").value.trim();
+
+      if (!category) {
+        alert("Please select a category!");
+        return;
+      }
+
+      if (fileInput.files.length === 0 && !linkInput) {
+        alert("Please upload a file or provide a link!");
+        return;
+      }
+
+      let resource;
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        resource = {
+          name: file.name,
+          url: URL.createObjectURL(file),
+          type: "file"
+        };
+      } else {
+        resource = {
+          name: linkInput,
+          url: linkInput,
+          type: "link"
+        };
+      }
+
+      resources[category].push(resource);
+
+      fileInput.value = "";
+      document.getElementById("linkInput").value = "";
+
+      displayResources();
+    }
+
+    function displayResources() {
+      const list = document.getElementById("resourceList");
+      list.innerHTML = "";
+
+      for (const category in resources) {
+        if (resources[category].length > 0) {
+          const categoryDiv = document.createElement("div");
+          categoryDiv.className = "resource-category";
+          categoryDiv.innerHTML = `<h3>${category}</h3>`;
+
+          resources[category].forEach(res => {
+            const item = document.createElement("div");
+            item.className = "resource-item";
+            item.innerHTML = `
+              <span>${res.name}</span>
+              <a href="${res.url}" download target="_blank">Download</a>
+            `;
+            categoryDiv.appendChild(item);
+          });
+
+          list.appendChild(categoryDiv);
+        }
+      }
+
+      if (list.innerHTML === "") {
+        list.innerHTML = "<p>No resources uploaded yet.</p>";
+      }
+    }
+  </script>
+
+</body>
+</html>
