@@ -10,265 +10,338 @@
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f') no-repeat center center/cover;
       height: 100vh;
-      overflow-y: auto;
+      overflow-x: hidden;
+      color: #fff;
     }
 
-    /* Overlay */
+    /* Dark overlay */
     body::before {
       content: "";
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.55);
       z-index: 0;
     }
 
-    h1 {
-      color: #fff;
-      text-align: center;
-      margin-top: 30px;
+    header {
       position: relative;
-      z-index: 1;
-      text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
-    }
-
-    .container {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(12px);
-      border-radius: 15px;
-      padding: 30px;
-      margin: 20px auto;
-      width: 90%;
-      max-width: 800px;
-      box-shadow: 0px 8px 25px rgba(0,0,0,0.4);
-      position: relative;
-      z-index: 1;
-      color: #fff;
-    }
-
-    h2 {
+      z-index: 2;
       text-align: center;
-      margin-bottom: 20px;
+      padding: 15px;
+      font-size: 28px;
+      font-weight: bold;
       color: #ffd700;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
     }
 
-    select, input, button {
-      padding: 12px;
-      margin: 10px 5px;
-      border-radius: 6px;
+    /* Sidebar (drawer) */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -260px; /* hidden initially */
+      width: 260px;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      transition: left 0.4s ease;
+      z-index: 3;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .sidebar.active { left: 0; }
+
+    .toggle-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #ffd700;
+      color: #000;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 4;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+      transition: 0.3s;
+    }
+
+    .toggle-btn:hover { background: #ffa500; }
+
+    .profile-initial {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #ffd700;
+      color: #000;
+      font-size: 32px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.6);
+    }
+
+    .sidebar h3 { margin-top: 15px; color: #ffd700; text-align: center; }
+    .sidebar p { font-size: 14px; margin: 6px 0; text-align: center; }
+
+    .sidebar-section { margin-top: 20px; }
+    .sidebar-section ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar-section li {
+      background: rgba(255,255,255,0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin: 6px 0;
+      font-size: 13px;
+    }
+
+    /* Main layout */
+    .dashboard {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      padding: 20px;
+      max-width: 1400px;
+      margin: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0px 8px 25px rgba(0,0,0,0.5);
+      transition: 0.3s;
+      flex: 1;
+      color: #fff;
+    }
+
+    .card:hover { transform: translateY(-3px); }
+    h2 { text-align: center; color: #ffd700; }
+
+    select, input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
       border: none;
       font-size: 14px;
     }
 
-    select, input {
-      width: 40%;
-      border: 1px solid #ccc;
-    }
-
-    input[type="file"], input[type="text"] {
-      background: #fff;
-    }
+    textarea { resize: none; height: 70px; }
+    input[type="file"], input[type="text"], textarea, select { background: rgba(255,255,255,0.9); color: #000; }
 
     button {
       background: linear-gradient(90deg, #ff512f, #dd2476);
-      color: white;
+      color: #fff;
       cursor: pointer;
-      transition: transform 0.3s;
+      font-weight: bold;
+      transition: transform 0.3s, background 0.3s;
     }
+    button:hover { transform: scale(1.05); background: linear-gradient(90deg, #dd2476, #ff512f); }
 
-    button:hover {
-      transform: scale(1.05);
-      background: linear-gradient(90deg, #dd2476, #ff512f);
-    }
-
-    .resource-list {
-      margin-top: 20px;
-    }
-
-    .resource-category {
-      margin: 15px 0;
-    }
-
+    .resource-list { max-height: 500px; overflow-y: auto; margin-top: 15px; }
     .resource-item {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       background: rgba(255,255,255,0.2);
       padding: 10px 15px;
-      border-radius: 8px;
+      border-radius: 10px;
       margin: 8px 0;
-      align-items: center;
     }
-
-    .resource-item span {
-      font-weight: bold;
-    }
-
+    .resource-item span { font-weight: bold; }
     .resource-item a {
       background: #ffd700;
-      color: black;
-      padding: 6px 12px;
-      border-radius: 5px;
+      color: #000;
+      padding: 5px 10px;
+      border-radius: 6px;
       text-decoration: none;
       font-size: 13px;
       transition: 0.3s;
     }
+    .resource-item a:hover { background: #ffa500; color: #fff; }
 
-    .resource-item a:hover {
-      background: #ffa500;
-      color: #fff;
+    .filter-buttons { text-align: center; margin-bottom: 10px; }
+    .filter-buttons button {
+      margin: 5px; padding: 7px 14px; font-size: 13px;
+      border-radius: 20px; border: none; cursor: pointer;
+      background: rgba(255,255,255,0.2); color: #fff; transition: 0.3s;
     }
+    .filter-buttons button:hover { background: #ffd700; color: #000; }
 
-    /* Profile Section */
-    .profile {
-  position: absolute;   /* Stick it in the corner */
-  top: 20px;
-  left: 20px;
-  width: 220px;         /* Small card width */
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
-  border-radius: 15px;
-  text-align: center;   /* Center content */
-  color: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
+    .search-bar { text-align: center; margin-bottom: 15px; }
+    .search-bar input { width: 80%; padding: 10px; border-radius: 8px; border: none; }
 
-.profile-pic {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;   /* Makes it circular */
-  object-fit: cover;    /* Crop image nicely */
-  margin-bottom: 10px;
-  border: 3px solid white;
-}
-      
-
-    .profile p {
-      margin: 2px;
-      font-size: 14px;
+    @media(max-width: 1000px) {
+      .dashboard { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
 <body>
 
-  <h1>📚 Welcome to EduLink Dashboard</h1>
+  <header>📚 EduLink Dashboard</header>
 
-  <!-- Profile Section -->
-  <div class="container profile">
-    <h2>Your Profile</h2>
-    <p><strong>Name:</strong> <span id="profileName"></span></p>
+  <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
+  <div class="sidebar" id="sidebar">
+    <div id="profileInitial" class="profile-initial"></div>
+    <h3 id="profileName"></h3>
     <p><strong>Year:</strong> <span id="profileYear"></span></p>
-    <p><strong>Department:</strong> <span id="profileDepartment"></span></p>
+    <p><strong>Dept:</strong> <span id="profileDepartment"></span></p>
     <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+
+    <div class="sidebar-section">
+      <h3>📤 My Uploads</h3>
+      <ul id="myUploadsList"><li>No uploads yet.</li></ul>
+    </div>
+    <div class="sidebar-section">
+      <h3>📥 My Downloads</h3>
+      <ul id="myDownloadsList"><li>No downloads yet.</li></ul>
+    </div>
   </div>
 
-  <!-- Upload Resource Section -->
-  <div class="container">
-    <h2>Upload Resource</h2>
-    <select id="uploadCategory">
-      <option value="" disabled selected>Select Category</option>
-      <option value="Books">📖 Books</option>
-      <option value="PYQs">📝 PYQs</option>
-      <option value="Links">🔗 Links</option>
-      <option value="Notes">📒 Notes</option>
-    </select>
-    <input type="file" id="fileInput">
-    <input type="text" id="linkInput" placeholder="Or paste a link">
-    <button onclick="uploadResource()">Upload</button>
-  </div>
+  <div class="dashboard">
+    <div class="card" style="flex:2;">
+      <h2>Get Resources</h2>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search resources..." onkeyup="searchResources()">
+      </div>
+      <div class="filter-buttons">
+        <button onclick="filterResources('All')">All</button>
+        <button onclick="filterResources('Books')">Books</button>
+        <button onclick="filterResources('Notes')">Notes</button>
+        <button onclick="filterResources('Links')">Links</button>
+        <button onclick="filterResources('PYQs')">PYQs</button>
+      </div>
+      <div id="resourceList" class="resource-list"><p>No resources uploaded yet.</p></div>
+    </div>
 
-  <!-- Get Resources Section -->
-  <div class="container">
-    <h2>Get Resources</h2>
-    <div id="resourceList" class="resource-list">
-      <p>No resources uploaded yet.</p>
+    <div class="card" style="flex:1;">
+      <h2>Upload Resource</h2>
+      <select id="uploadCategory">
+        <option value="" disabled selected>Select Category</option>
+        <option value="Books">📖 Books</option>
+        <option value="PYQs">📝 PYQs</option>
+        <option value="Links">🔗 Links</option>
+        <option value="Notes">📒 Notes</option>
+      </select>
+      <input type="file" id="fileInput">
+      <input type="text" id="linkInput" placeholder="Or paste a link">
+      <textarea id="descInput" placeholder="Enter description (e.g. 'C++ Notes')"></textarea>
+      <button onclick="uploadResource()">Upload</button>
     </div>
   </div>
 
   <script>
-    // Show profile from localStorage
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      document.getElementById("profileName").innerText = storedUser.name;
-      document.getElementById("profileYear").innerText = storedUser.year;
-      document.getElementById("profileDepartment").innerText = storedUser.department;
-      document.getElementById("profileEmail").innerText = storedUser.email;
-    }
-
-    // Resources logic
-    let resources = {
-      Books: [],
-      PYQs: [],
-      Links: [],
-      Notes: []
+    const storedUser = JSON.parse(localStorage.getItem("user")) || {
+      name: "Sample User",
+      year: "3rd",
+      department: "CSE",
+      email: "sample@email.com"
     };
 
-    function uploadResource() {
+    document.getElementById("profileInitial").innerText = storedUser.name.charAt(0).toUpperCase();
+    document.getElementById("profileName").innerText = storedUser.name;
+    document.getElementById("profileYear").innerText = storedUser.year;
+    document.getElementById("profileDepartment").innerText = storedUser.department;
+    document.getElementById("profileEmail").innerText = storedUser.email;
+
+    let resources = { Books: [], PYQs: [], Links: [], Notes: [] };
+    let myUploads = [];
+    let myDownloads = [];
+
+    function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); }
+
+    async function getFileHash(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+
+    function isSimilar(desc1, desc2) {
+      const words1 = new Set(desc1.toLowerCase().split(/\W+/));
+      const words2 = new Set(desc2.toLowerCase().split(/\W+/));
+      const intersection = new Set([...words1].filter(x => words2.has(x)));
+      return (intersection.size / Math.max(words1.size, words2.size)) > 0.6;
+    }
+
+    async function uploadResource() {
       const category = document.getElementById("uploadCategory").value;
       const fileInput = document.getElementById("fileInput");
       const linkInput = document.getElementById("linkInput").value.trim();
+      const descInput = document.getElementById("descInput").value.trim();
 
-      if (!category) {
-        alert("Please select a category!");
-        return;
-      }
+      if (!category || !descInput) { alert("Please select a category and enter description!"); return; }
+      if (fileInput.files.length === 0 && !linkInput) { alert("Please upload a file or provide a link!"); return; }
 
-      if (fileInput.files.length === 0 && !linkInput) {
-        alert("Please upload a file or provide a link!");
-        return;
-      }
+      const existing = resources[category].find(r => isSimilar(r.description, descInput));
+      if (existing) { alert("A similar resource already exists: " + existing.description); return; }
 
       let resource;
-
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        resource = {
-          name: file.name,
-          url: URL.createObjectURL(file),
-          type: "file"
-        };
+        const fileHash = await getFileHash(file);
+        if (resources[category].some(r => r.hash === fileHash)) { alert("This file has already been uploaded!"); return; }
+        resource = { name: file.name, description: descInput, url: URL.createObjectURL(file), type: "file", uploader: storedUser.name, hash: fileHash };
       } else {
-        resource = {
-          name: linkInput,
-          url: linkInput,
-          type: "link"
-        };
+        if (resources[category].some(r => r.url === linkInput)) { alert("This link has already been uploaded!"); return; }
+        resource = { name: linkInput, description: descInput, url: linkInput, type: "link", uploader: storedUser.name };
       }
 
       resources[category].push(resource);
-
-      fileInput.value = "";
-      document.getElementById("linkInput").value = "";
-
+      myUploads.push(resource);
+      updateSidebarUploads();
+      fileInput.value = ""; document.getElementById("linkInput").value = ""; document.getElementById("descInput").value = "";
       displayResources();
     }
 
-    function displayResources() {
+    function displayResources(filter = "All", search = "") {
       const list = document.getElementById("resourceList");
       list.innerHTML = "";
+      let filteredResources = filter === "All" ? resources : { [filter]: resources[filter] };
 
-      for (const category in resources) {
-        if (resources[category].length > 0) {
+      for (const category in filteredResources) {
+        if (filteredResources[category].length > 0) {
           const categoryDiv = document.createElement("div");
           categoryDiv.className = "resource-category";
-          categoryDiv.innerHTML = `<h3>${category}</h3>`;
-
-          resources[category].forEach(res => {
+          categoryDiv.innerHTML = <h3>${category}</h3>;
+          filteredResources[category].forEach(res => {
+            if (search && !res.description.toLowerCase().includes(search.toLowerCase())) return;
             const item = document.createElement("div");
             item.className = "resource-item";
-            item.innerHTML = `
-              <span>${res.name}</span>
-              <a href="${res.url}" download target="_blank">Download</a>
-            `;
+            const actionButton = res.type === "link"
+              ? <a href="${res.url}" target="_blank" onclick="trackDownload('${res.description}')">Open</a>
+              : <a href="${res.url}" download onclick="trackDownload('${res.description}')">Download</a>;
+            item.innerHTML = <span>${res.description} <small>(${res.uploader})</small></span>${actionButton};
             categoryDiv.appendChild(item);
           });
-
-          list.appendChild(categoryDiv);
+          if (categoryDiv.children.length > 1) list.appendChild(categoryDiv);
         }
       }
-
-      if (list.innerHTML === "") {
-        list.innerHTML = "<p>No resources uploaded yet.</p>";
-      }
+      if (list.innerHTML === "") list.innerHTML = "<p>No resources found.</p>";
     }
+
+    function filterResources(cat) { displayResources(cat, document.getElementById("searchInput").value); }
+    function searchResources() { displayResources("All", document.getElementById("searchInput").value); }
+
+    function trackDownload(desc) { myDownloads.push(desc); updateSidebarDownloads(); }
+    function updateSidebarUploads() {
+      const ul = document.getElementById("myUploadsList");
+      ul.innerHTML = myUploads.length ? myUploads.map(r => <li>${r.description}</li>).join("") : "<li>No uploads yet.</li>";
+    }
+    function updateSidebarDownloads() {
+      const ul = document.getElementById("myDownloadsList");
+      ul.innerHTML = myDownloads.length ? myDownloads.map(d => <li>${d}</li>).join("") : "<li>No downloads yet.</li>";
+    }
+
+    displayResources();
   </script>
 
 </body>
