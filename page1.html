@@ -311,15 +311,15 @@
         if (filteredResources[category].length > 0) {
           const categoryDiv = document.createElement("div");
           categoryDiv.className = "resource-category";
-          categoryDiv.innerHTML = <h3>${category}</h3>;
+          categoryDiv.innerHTML = `<h3>${category}</h3>`;
           filteredResources[category].forEach(res => {
             if (search && !res.description.toLowerCase().includes(search.toLowerCase())) return;
             const item = document.createElement("div");
             item.className = "resource-item";
             const actionButton = res.type === "link"
-              ? <a href="${res.url}" target="_blank" onclick="trackDownload('${res.description}')">Open</a>
-              : <a href="${res.url}" download onclick="trackDownload('${res.description}')">Download</a>;
-            item.innerHTML = <span>${res.description} <small>(${res.uploader})</small></span>${actionButton};
+              ? `<a href="${res.url}" target="_blank" onclick="trackDownload('${res.description}')">Open</a>`
+              : `<a href="${res.url}" download onclick="trackDownload('${res.description}')">Download</a>`;
+            item.innerHTML = `<span>${res.description} <small>(${res.uploader})</small></span>${actionButton}`;
             categoryDiv.appendChild(item);
           });
           if (categoryDiv.children.length > 1) list.appendChild(categoryDiv);
@@ -334,11 +334,11 @@
     function trackDownload(desc) { myDownloads.push(desc); updateSidebarDownloads(); }
     function updateSidebarUploads() {
       const ul = document.getElementById("myUploadsList");
-      ul.innerHTML = myUploads.length ? myUploads.map(r => <li>${r.description}</li>).join("") : "<li>No uploads yet.</li>";
+      ul.innerHTML = myUploads.length ? myUploads.map(r => `<li>${r.description}</li>`).join("") : "<li>No uploads yet.</li>";
     }
     function updateSidebarDownloads() {
       const ul = document.getElementById("myDownloadsList");
-      ul.innerHTML = myDownloads.length ? myDownloads.map(d => <li>${d}</li>).join("") : "<li>No downloads yet.</li>";
+      ul.innerHTML = myDownloads.length ? myDownloads.map(d => `<li>${d}</li>`).join("") : "<li>No downloads yet.</li>";
     }
 
     displayResources();
