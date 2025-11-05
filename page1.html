@@ -112,12 +112,12 @@
     }
 
     .card {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(15px);
-      border-radius: 15px;
-      padding: 25px;
-      box-shadow: 0px 8px 25px rgba(0,0,0,0.5);
-      transition: 0.3s;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px) saturate(140%);
+      border-radius: 16px;
+      padding: 26px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      transition: transform .25s ease, box-shadow .25s ease;
       flex: 1;
       color: #fff;
     }
@@ -151,17 +151,17 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255,255,255,0.2);
-      padding: 10px 15px;
-      border-radius: 10px;
+      background: rgba(255,255,255,0.18);
+      padding: 12px 16px;
+      border-radius: 12px;
       margin: 8px 0;
     }
-    .resource-item span { font-weight: bold; }
+    .resource-item span { font-weight: 600; }
     .resource-item a {
       background: #ffd700;
       color: #000;
-      padding: 5px 10px;
-      border-radius: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
       text-decoration: none;
       font-size: 13px;
       transition: 0.3s;
@@ -170,11 +170,11 @@
 
     .filter-buttons { text-align: center; margin-bottom: 10px; }
     .filter-buttons button {
-      margin: 5px; padding: 7px 14px; font-size: 13px;
-      border-radius: 20px; border: none; cursor: pointer;
-      background: rgba(255,255,255,0.2); color: #fff; transition: 0.3s;
+      margin: 5px; padding: 8px 16px; font-size: 13px;
+      border-radius: 999px; border: 1px solid rgba(255,255,255,.25); cursor: pointer;
+      background: rgba(255,255,255,0.15); color: #fff; transition: 0.2s;
     }
-    .filter-buttons button:hover { background: #ffd700; color: #000; }
+    .filter-buttons button:hover { background: #ffd700; color: #000; box-shadow: 0 4px 14px rgba(255,215,0,.4); }
 
     .search-bar { text-align: center; margin-bottom: 15px; }
     .search-bar input { width: 80%; padding: 10px; border-radius: 8px; border: none; }
@@ -211,7 +211,8 @@
     <div class="card" style="flex:2;">
       <h2>Get Resources</h2>
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search resources..." onkeyup="searchResources()">
+        <input type="text" id="searchInput" placeholder="Search by name, description or uploader" onkeyup="searchResources()">
+        <div id="resultsMeta" style="margin-top:6px;color:#eee;font-size:13px;"></div>
       </div>
       <div class="filter-buttons">
         <button onclick="filterResources('All')">All</button>
@@ -239,12 +240,15 @@
     </div>
   </div>
 
+  <script src="/js/api.js"></script>
+  <script src="/js/idb.js"></script>
   <script>
-    const storedUser = JSON.parse(localStorage.getItem("user")) || {
-      name: "Sample User",
-      year: "3rd",
-      department: "CSE",
-      email: "sample@email.com"
+    const rawUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const storedUser = {
+      name: rawUser.name || "Sample User",
+      year: rawUser.year || "First Year",
+      department: rawUser.department || "General",
+      email: rawUser.email || "sample@email.com"
     };
 
     document.getElementById("profileInitial").innerText = storedUser.name.charAt(0).toUpperCase();
@@ -259,10 +263,25 @@
 
     function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); }
 
+    // Salted hashing using provided key to improve de-duplication across similar content
+    const DEDUPE_KEY = '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';
+
+    async function sha256Hex(buffer) {
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     async function getFileHash(file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,"0")).join("");
+      const fileBuffer = await file.arrayBuffer();
+      const merged = new Uint8Array(fileBuffer.byteLength + DEDUPE_KEY.length);
+      merged.set(new Uint8Array(fileBuffer), 0);
+      for (let i = 0; i < DEDUPE_KEY.length; i++) merged[fileBuffer.byteLength + i] = DEDUPE_KEY.charCodeAt(i) & 0xff;
+      return await sha256Hex(merged.buffer);
+    }
+
+    async function getLinkHash(url, desc) {
+      const enc = new TextEncoder().encode(url + '|' + (desc || '') + '|' + DEDUPE_KEY);
+      return await sha256Hex(enc.buffer);
     }
 
     function isSimilar(desc1, desc2) {
@@ -288,11 +307,22 @@
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const fileHash = await getFileHash(file);
-        if (resources[category].some(r => r.hash === fileHash)) { alert("This file has already been uploaded!"); return; }
-        resource = { name: file.name, description: descInput, url: URL.createObjectURL(file), type: "file", uploader: storedUser.name, hash: fileHash };
+        const duplicate = await window.idbApi.idbFindByHash(fileHash);
+        if (duplicate) { alert("This file has already been uploaded!"); return; }
+        const createdAt = Date.now();
+        const blob = file; // store original Blob
+        const mat = { name: file.name, description: descInput, category, type: 'file', uploader: storedUser.name, hash: fileHash, createdAt, blob };
+        const id = await window.idbApi.idbAddMaterial(mat);
+        const url = URL.createObjectURL(blob);
+        resource = { id, name: file.name, description: descInput, url, type: 'file', uploader: storedUser.name, hash: fileHash };
       } else {
-        if (resources[category].some(r => r.url === linkInput)) { alert("This link has already been uploaded!"); return; }
-        resource = { name: linkInput, description: descInput, url: linkInput, type: "link", uploader: storedUser.name };
+        const linkHash = await getLinkHash(linkInput, descInput);
+        const duplicate = await window.idbApi.idbFindByHash(linkHash);
+        if (duplicate) { alert("This link has already been uploaded!"); return; }
+        const createdAt = Date.now();
+        const mat = { name: linkInput, description: descInput, category, type: 'link', uploader: storedUser.name, hash: linkHash, createdAt };
+        const id = await window.idbApi.idbAddMaterial(mat);
+        resource = { id, name: linkInput, description: descInput, url: linkInput, type: 'link', uploader: storedUser.name, hash: linkHash };
       }
 
       resources[category].push(resource);
@@ -306,6 +336,7 @@
       const list = document.getElementById("resourceList");
       list.innerHTML = "";
       let filteredResources = filter === "All" ? resources : { [filter]: resources[filter] };
+      let totalCount = 0;
 
       for (const category in filteredResources) {
         if (filteredResources[category].length > 0) {
@@ -313,23 +344,35 @@
           categoryDiv.className = "resource-category";
           categoryDiv.innerHTML = `<h3>${category}</h3>`;
           filteredResources[category].forEach(res => {
-            if (search && !res.description.toLowerCase().includes(search.toLowerCase())) return;
+            const q = (search || "").toLowerCase().trim();
+            if (q) {
+              const hay = `${res.name || ""} ${res.description || ""} ${res.uploader || ""}`.toLowerCase();
+              if (!hay.includes(q)) return;
+            }
             const item = document.createElement("div");
             item.className = "resource-item";
             const actionButton = res.type === "link"
               ? `<a href="${res.url}" target="_blank" onclick="trackDownload('${res.description}')">Open</a>`
               : `<a href="${res.url}" download onclick="trackDownload('${res.description}')">Download</a>`;
-            item.innerHTML = `<span>${res.description} <small>(${res.uploader})</small></span>${actionButton}`;
+            item.innerHTML = `<span><strong>${res.name || res.description}</strong> <small>(${res.uploader})</small><br/><small style="opacity:.85;">${res.description || ''}</small></span>${actionButton}`;
             categoryDiv.appendChild(item);
+            totalCount++;
           });
           if (categoryDiv.children.length > 1) list.appendChild(categoryDiv);
         }
       }
       if (list.innerHTML === "") list.innerHTML = "<p>No resources found.</p>";
+      const meta = document.getElementById('resultsMeta');
+      if (meta) meta.textContent = `Showing ${totalCount} result${totalCount===1?'':'s'}`;
     }
 
     function filterResources(cat) { displayResources(cat, document.getElementById("searchInput").value); }
-    function searchResources() { displayResources("All", document.getElementById("searchInput").value); }
+    function debounce(fn, delay) {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
+    }
+    const searchResources = debounce(() => {
+      displayResources("All", document.getElementById("searchInput").value);
+    }, 200);
 
     function trackDownload(desc) { myDownloads.push(desc); updateSidebarDownloads(); }
     function updateSidebarUploads() {
@@ -342,6 +385,19 @@
     }
 
     displayResources();
+
+    // Load saved materials from IndexedDB on startup
+    (async function hydrateResourcesFromDB() {
+      try {
+        const all = await window.idbApi.idbGetAllMaterials();
+        for (const m of all) {
+          if (!resources[m.category]) resources[m.category] = [];
+          let url = m.type === 'file' && m.blob ? URL.createObjectURL(m.blob) : (m.name || '');
+          resources[m.category].push({ id: m.id, name: m.name, description: m.description, url: url || m.name, type: m.type, uploader: m.uploader, hash: m.hash });
+        }
+        displayResources();
+      } catch (e) { console.warn('Failed to load IndexedDB materials', e); }
+    })();
   </script>
 
 </body>
